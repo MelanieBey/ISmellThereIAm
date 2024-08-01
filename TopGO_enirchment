@@ -1,0 +1,90 @@
+
+### topGO enrichment analyses ###
+#Barbara Feldmeyer 29.05.2019
+
+#AIM: conduct an enrichment analysis to test for the overreprentation of functional categories in a list of differentially expressed genes.
+
+# as input you need a test dataset = list of IDs corresponding to the differentially expressed genes, 
+# and as reference set you need a table containing the IDs or expressed genes plus their corresponding GO IDs (functions), e.g. obtained from Interproscan
+
+#load the following libraries
+BiocManager::install("topGO", force = TRUE)
+
+library(topGO)
+library(ggplot2)
+
+
+
+# set working directory = full path to directory containing your input files
+
+
+
+#load the universe reference file you created using bash
+universe <- readMappings(file=".../Ae_universe_reference_topGO.txt") # "adjust the filename you want to use as background. 
+# "adjust the filename you want to use as background. 
+
+# generate list of the protein IDs
+universe_genelist <- names(universe)
+
+
+##########
+##treatment_up
+########
+#we start with an enrichment analysis of the "treatment_up" differentially expressed genes
+DEG = "DEGtreatmentbothcolonies.txt" # adjust the filename to the file you want to analyze
+# generate a reference list of the protein IDs
+testset_genelist_tuq <- readLines(DEG)
+
+#determine matches between both datasets
+gene_list_tuq <- factor(as.integer(universe_genelist %in% testset_genelist_tuq))
+names(gene_list_tuq) <- universe_genelist
+
+
+
+#set the ontology type you want to investigate, we first choose "Biological Processes"=BP
+ontology_type = "MF" # BP or CC or MF 
+
+#object containing all necessary information
+GO_data_tuq <- new("topGOdata", description="GO_Enrichment", ontology=ontology_type, allGenes=gene_list_tuq, annot = annFUN.gene2GO, gene2GO=universe)
+#run the analysis and set the algorithm to "weight01". The most commonly used algorithms are "weight01" and "parentchild"
+result_topGO_w01_tuq <- runTest(GO_data_tuq, algorithm = "weight01", statistic = "fisher")
+
+#create a table containing all necessary information and save to file
+result_table_w01_tuq <- GenTable(GO_data_tuq, Fisher = result_topGO_w01_tuq, orderBy = "Fisher", ranksOf = "Fisher", topNodes = numSigGenes(GO_data_tuq)) 
+write.csv(result_table_w01_tuq, file=paste0("topGO_result_weight01_", DEG, "_", ontology_type, ".csv"))
+#
+##if you want to save the significant functions only  
+write.csv(result_table_w01_tuq[which(result_table_w01_tuq$Fisher<0.05),], file=paste0("topGO_result_weight01_significant_", DEG, "_", ontology_type, ".csv"))
+
+
+##########
+##treatment_down
+########
+#we start with an enrichment analysis of the "treatment_down" differentially expressed genes
+Ae21dowAoPen = "Ae21_Down_AoPen_sig.txt" # adjust the filename to the file you want to analyze
+# generate a reference list of the protein IDs
+testset_genelist_tuq <- readLines(Ae21dowAoPen)
+
+#determine matches between both datasets
+gene_list_tuq <- factor(as.integer(universe_genelist %in% testset_genelist_tuq))
+names(gene_list_tuq) <- universe_genelist
+
+
+
+#set the ontology type you want to investigate, we first choose "Biological Processes"=BP
+ontology_type = "MF" # BP or CC or MF 
+
+#object containing all necessary information
+GO_data_tuq <- new("topGOdata", description="GO_Enrichment", ontology=ontology_type, allGenes=gene_list_tuq, annot = annFUN.gene2GO, gene2GO=universe)
+#run the analysis and set the algorithm to "weight01". The most commonly used algorithms are "weight01" and "parentchild"
+result_topGO_w01_tuq <- runTest(GO_data_tuq, algorithm = "weight01", statistic = "fisher")
+
+#create a table containing all necessary information and save to file
+result_table_w01_tuq <- GenTable(GO_data_tuq, Fisher = result_topGO_w01_tuq, orderBy = "Fisher", ranksOf = "Fisher", topNodes = numSigGenes(GO_data_tuq)) 
+write.csv(result_table_w01_tuq, file=paste0("topGO_result_weight01_", Ae21dowAoPen, "_", ontology_type, ".csv"))
+#
+##if you want to save the significant functions only  
+write.csv(result_table_w01_tuq[which(result_table_w01_tuq$Fisher<0.05),], file=paste0("topGO_result_weight01_significant_", Ae21dowAoPen, "_", ontology_type, ".csv"))
+
+#####
+
