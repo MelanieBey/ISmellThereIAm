@@ -1,0 +1,285 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+#BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(grid)
+library(magick)
+library(here) 
+library(magrittr) 
+library(tibble)
+library(fBasics)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+library(RColorBrewer)
+#library(pasilla) #no
+
+#BiocManager::install("fifer")
+library(ggsignif)
+library(chisq.posthoc.test)
+library(cli)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+#??DESeq2
+
+
+
+Ae32Ae21 <- read.table(".../Ae21Ae32_graf_1_1.csv",
+                               header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+Ae32Ae21 <- Ae32Ae21 %>% mutate_if(is.character,as.factor)
+
+##### Fig 1
+#c("Neuro related", "Olfactory related", "Protein biosynthesis", "Gene regulation", "Energy production", "Growth", "Biological process", "Cellular component", "Molecular function")
+
+ggplot(Ae32Ae21, aes(x = factor(habituation, level = c('Control', 'Intra-species', 'Inter-species')), y = nb_DEG)) +
+  geom_col(aes(fill = factor(cathegory, level = c("Neuro related", "Olfactory transduction", "Other"))))+
+  scale_fill_manual(values = c("firebrick","darkorchid4", "grey55"))+
+  xlab("Group of habituation") +
+  ylab("Dissimilarity between colonies (number of DEGs)")+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.title=element_blank(),
+        legend.text = element_text(size = 30))+
+  geom_signif(comparisons=list(c('Control', 'Inter-species')), annotations="***",
+              y_position = 1050, tip_length = 0, textsize = 10) +
+  coord_cartesian( ylim = c(0, 1100)) 
+ggsave(filename ="figcoldif.pdf",width = 16, height = 12, dpi = 1200)
+
+
+PenAe21_32 <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(5,5,13,7,16,6,33),
+  labels=c("6%","6%","15%","8%","19%","7%", "39%"))
+
+PenAe21_32_pie <- ggplot(PenAe21_32, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = value, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+PenAe21_32_pie + ggsave(filename ="PenAe21_32_pie.pdf",width = 5, height = 5, dpi = 1200)
+
+
+AeAe21_32 <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(1,0,6,7,17,9,21),
+  labels=c(1,"",6,7,17,9,21))
+
+AeAe21_32_pie <- ggplot(AeAe21_32, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = labels, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.title = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+AeAe21_32_pie + ggsave(filename ="AeAe21_32_pie.pdf",width = 5, height = 5, dpi = 1200)
+
+
+AoAe21_32 <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(1,2,0,1,3,2,1),
+  labels=c(1,2,"",1,3,2,1))
+
+AoAe21_32_pie <- ggplot(AoAe21_32, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = labels, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+AoAe21_32_pie + ggsave(filename ="AoAe21_32_pie.pdf",width = 5, height = 7, dpi = 1200)
+
+blank <- ggplot(AoAe21_32, aes(x="", y=value)) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") 
+blank + ggsave(filename ="blank.pdf",width = 5, height = 4, dpi = 1200)
+
+
+
+fig1 <- image_read_pdf("fig1.pdf")
+piePen <- image_read_pdf("PenAe21_32_pie.pdf")
+pieAe <- image_read_pdf("AeAe21_32_pie.pdf")
+pieAo <- image_read_pdf("AoAe21_32_pie.pdf")
+legendpie <- image_read_pdf("legendpie_3.pdf")
+pieblt <- image_read_pdf("blank_pie_tinny.pdf")
+
+#legendpie <- image_resize(legendpie, geometry_size_pixels(height = 1500))
+#image_write(legendpie, path = "legendpieR.pdf", format = "pdf")
+
+pies <- image_append(c(pieblt, piePen,pieAe,pieAo ), stack = FALSE)
+leg <- image_append(c(pieblt,legendpie ), stack = TRUE)
+fig <- image_append(c(fig1,pies ), stack = TRUE)
+fig_1 <- image_append(c(fig,leg), stack = FALSE)
+
+image_write(fig_1, path = "fig1comp.pdf", format = "pdf")
+
+
+M <- as.table(rbind(c(128,16,19), c(918,275,36)))
+dimnames(M) <- list(DEG = c("neuro&olfactory_DEG", "Other_DEG"),
+                    treatment = c("Pen","Ae", "Ao"))
+M
+chisq <- chisq.test(M, correct=F)
+chisqpost <- chisq.posthoc.test(M, method = "bonferroni", round = 6)
+
+M <- as.table(c(1046,291,55))
+names(M) <- c("Pen","Ae", "Ao")
+M
+chisq <- chisq.test(M, correct=F)
+
+
+### OR
+M <- as.table(rbind(c(54,6,8), c(381,429,427)))
+dimnames(M) <- list(DEG = c("OR_DEG", "OR"),
+                    treatment = c("Pen","Ae", "Ao"))
+M
+chisq <- chisq.test(M, correct=F)
+chisqpost <- chisq.posthoc.test(M, method = "bonferroni", round = 6)
+
+M <- as.table(c(54,6,8))
+names(M) <- c("Pen","Ae", "Ao")
+M
+chisq <- chisq.test(M, correct=F)
+
+
+Counts_ant_filtered <- read.table(".../readcounttable_habituation_minusAe21Pen1_filtered.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Counts_ant_filtered <- read.table(".../readcounttable_habituation_minusAe21Pen1_minusOR_filtered.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+
+Counts_ant_filtered <- Counts_ant_filtered %>% mutate_if(is.character,as.factor)
+
+
+
+Design_ant <- read.table(".../design_habituation_minusAe21Pen1.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- Design_ant %>% mutate_if(is.character,as.factor)
+
+#Pen 
+
+Counts_ant_filtered_pen=Counts_ant_filtered[Design_ant$habituation=="Pentan"]
+Counts_ant_filtered_pen <- Counts_ant_filtered_pen %>% mutate_if(is.character,as.integer)
+
+Design_pen=data.frame(Design_ant[Design_ant$habituation=="Pentan",1])
+colnames(Design_pen) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_pen, colData = Design_pen, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_A<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"%")) +
+  ylab(paste0("PC2: ",percentVar[2],"%"))+
+  theme(axis.text=element_text(size=74, face="bold"),
+        axis.title=element_text(size=74,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none")+
+  stat_ellipse()
+
+p2_A
+#p2_A + ggsave(filename ="PCA_colony_ellipse_pen.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_pen_coord.csv')
+
+
+#Ae
+
+Counts_ant_filtered_Ae=Counts_ant_filtered[Design_ant$habituation=="Ae"]
+Counts_ant_filtered_Ae <- Counts_ant_filtered_Ae %>% mutate_if(is.character,as.integer)
+
+Design_Ae=data.frame(Design_ant[Design_ant$habituation=="Ae",1])
+colnames(Design_Ae) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ae, colData = Design_Ae, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_B<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"%")) +
+  ylab(paste0("PC2: ",percentVar[2],"%"))+
+  theme(axis.text=element_text(size=74, face="bold"),
+        axis.title=element_text(size=74,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none") +
+  scale_x_continuous(breaks=c(-30,-15,0,15,30)) +
+  stat_ellipse()
+
+p2_B
+#p2_B + ggsave(filename ="PCA_colony_ellipse_Ae.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_Ae_coord.csv')
+
+#Ao
+
+Counts_ant_filtered_Ao=Counts_ant_filtered[Design_ant$habituation=="Ao"]
+Counts_ant_filtered_Ao <- Counts_ant_filtered_Ao %>% mutate_if(is.character,as.integer)
+
+Design_Ao=data.frame(Design_ant[Design_ant$habituation=="Ao",1])
+colnames(Design_Ao) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ao, colData = Design_Ao, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_C<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"%")) +
+  ylab(paste0("PC2: ",percentVar[2],"%"))+
+  theme(axis.text=element_text(size=74, face="bold"),
+        axis.title=element_text(size=74,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none")+
+  stat_ellipse()
+
+p2_C
+#p2_C + ggsave(filename ="PCA_colony_ellipse_Ao.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_Ao_coord.csv')
+
+p <- ggarrange(p2_A, p2_B, p2_C, ncol = 3, nrow = 1,
+               font.label = list(size = 26, color = "black"))
+p
+p + ggsave(filename ="coldifallgene.pdf",width = 30, height = 16, dpi = 1200)
+
