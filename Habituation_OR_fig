@@ -1,0 +1,345 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+#BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(tibble)
+library(fBasics)
+library(magick)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+#library(pasilla) #no
+library(dplyr)
+
+#BiocManager::install("tibble")
+#library(lima)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+library(ggpubr)
+#??DESeq2
+
+
+#write.csv(Counts,'Counts.csv')
+Counts_OR_design <- read.table(".../design_habituation_minusAe21Pen1.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Counts_OR_design <- Counts_OR_design %>% mutate_if(is.character,as.factor)
+
+Counts_OR <- read.table(".../readcounttable_habituation_minusAe21Pen1_filtered_OR.csv",
+                               header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+which(is.na(Counts_OR))
+sum(is.na(Counts_OR))
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_OR, colData = Counts_OR_design, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("habituation", "Ao","Pentan"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+#write.csv(dataomit,'Ae32_AoPen_contrast_OR.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'AoPen_contrast_OR.csv_sig.csv')
+
+
+### upload with header=TRUE and sep="\t"
+
+
+### Ae32
+
+Counts_OR_Ae32=Counts_OR[Counts_OR_design$colony=="Ae32"]
+
+Design_Ae32=data.frame(Counts_OR_design[Counts_OR_design$colony=="Ae32",2])
+colnames(Design_Ae32) <- "habituation"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_OR_Ae32, colData = Design_Ae32, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("habituation", "Ao","Pentan"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+#write.csv(dataomit,'Ae32_AoPen_contrast_OR.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+#write.csv(dataomit,'Ae32_AoPen_contrast_OR.csv_sig.csv')
+
+
+Counts_OR_Ae32pen <- read.table(".../Ae32PenOR.csv",  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+p <- ggplot(Counts_OR_Ae32pen, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("black","black")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  coord_polar(start = 0)
+p
+
+p + ggsave(filename ="Ae32PenOR.pdf",width = 28, height =  16, dpi = 1200)
+
+Counts_OR_Ae32Ae <- read.table("/Users/melaniebey/Desktop/phd/phd_project/1_Nestmate_template_shape/habituation_Ae/Manuscript/Result2.0/datR/Ae32AeOR.csv",
+                               header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+p <- ggplot(Counts_OR_Ae32Ae, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("cornflowerblue", "cyan","black")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA)) +
+  coord_polar(start = 0)
+p
+
+p + ggsave(filename ="Ae32AeOR.pdf",width = 28, height = 16, dpi = 1200)
+
+Counts_OR_Ao32Ae <- read.table("/Users/melaniebey/Desktop/phd/phd_project/1_Nestmate_template_shape/habituation_Ae/Manuscript/Result2.0/datR/Ae32AoOR.csv",
+                               header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+p <- ggplot(Counts_OR_Ao32Ae, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("seagreen3","black")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA)) +
+  coord_polar(start = 0)
+p
+
+p + ggsave(filename ="Ae32AoOR.pdf",width = 28, height = 16, dpi = 1200)
+
+
+A <- image_read_pdf("Ae32PenOR.pdf")
+B <- image_read_pdf("Ae32AeOR.pdf")
+C <- image_read_pdf("Ae32AoOR.pdf")
+D <- image_read_pdf("LegendOR.pdf")
+
+
+
+fig <- image_append(c(A,B,C), stack = FALSE)
+
+image_write(fig, path = "Ae32OR.pdf", format = "pdf")
+
+
+### Habituation
+
+Counts_Ae32_OR=Counts_OR[Counts_OR_design$colony=="Ae32"]
+
+Design_Ae32=data.frame(Counts_OR_design[Counts_OR_design$colony=="Ae32",2])
+colnames(Design_Ae32) <- "habituation"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_Ae32_OR, colData = Design_Ae32, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE,nsub=nrow(dds)-1 )
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("habituation"), returnData=TRUE) 
+percentVar <- round(100 * attr(data, "percentVar"))
+p32 <- ggplot(data, aes(PC1, PC2, color=habituation)) +
+  geom_point(size=12) +
+  scale_color_manual(values = c( "blue4","lightgreen", "yellow2"))+ #your colors here
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none")+
+  stat_ellipse()
+ggplot(data, aes(x=PC1, y=PC2)) + geom_point() + geom_text(aes(label=name))
+
+p32
+
+
+Counts_Ae21_OR=Counts_OR[Counts_OR_design$colony=="Ae21"]
+
+Design_Ae21=data.frame(Counts_OR_design[Counts_OR_design$colony=="Ae21",2])
+colnames(Design_Ae21) <- "habituation"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_Ae21_OR, colData = Design_Ae21, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE,nsub=nrow(dds)-1 )
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("habituation"), returnData=TRUE) 
+percentVar <- round(100 * attr(data, "percentVar"))
+data <- plotPCA(rld, intgroup=c("habituation"), returnData=TRUE) 
+percentVar <- round(100 * attr(data, "percentVar"))
+
+p21 <- ggplot(data, aes(PC1, PC2, color=habituation)) +
+  geom_point(size=12) +
+  scale_color_manual(labels = c("Intra-species", "Inter-species", "Control"), values = c("blue4","lightgreen", "yellow2"))+ #your colors here
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.title=element_blank(),
+        legend.text = element_text(size = 20))+
+  stat_ellipse()
+p21
+
+p <- ggarrange(p32, p21, ncol = 2, nrow = 1,
+               labels = c("A", "B", "C"),
+               font.label = list(size = 26, color = "black"))
+p
+p + ggsave(filename ="FigORhabi.pdf",width = 26, height = 12, dpi = 1200)
+
+
+
+### Ae21
+
+Counts_OR_Ae21=Counts_OR[Counts_OR_design$colony=="Ae21"]
+
+Design_Ae21=data.frame(Counts_OR_design[Counts_OR_design$colony=="Ae21",2])
+colnames(Design_Ae21) <- "habituation"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_OR_Ae21, colData = Design_Ae21, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("habituation", "Ae","Pentan"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21_AePen_contrast_OR.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21_AePen_contrast_OR.csv_sig.csv')
+
+
+#Ae21
+
+Counts_OR_Ae21Pen <- read.table(".../Ae21PenOR.csv",
+                               header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+p <- ggplot(Counts_OR_Ae21Pen, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("black","black")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA)) +
+  coord_polar(start = 0)
+
+p
+
+p + ggsave(filename ="Ae21PenOR.pdf",width = 28, height = 16, dpi = 1200)
+
+
+Counts_OR_Ae21Ae <- read.table(".../Ae21AeOR.csv",
+                                header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+p <- ggplot(Counts_OR_Ae21Ae, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("cornflowerblue","black")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA)) +
+  coord_polar(start = 0)
+
+p
+
+p + ggsave(filename ="Ae21AeOR.pdf",width = 28, height = 16, dpi = 1200)
+
+Counts_OR_Ae21Ao <- read.table(".../Ae21AoOR.csv",
+                               header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+p <- ggplot(Counts_OR_Ae21Ao, aes(x=as.factor(ID), y=log(mean), fill=sig )) +  
+  geom_bar(stat="identity") +
+  scale_fill_manual(values=c("black","seagreen3")) +
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA)) +
+  coord_polar(start = 0)
+p
+
+p + ggsave(filename ="Ae21AoOR.pdf",width = 28, height = 16, dpi = 1200)
+
+A <- image_read_pdf("Ae32PenOR.pdf")
+B <- image_read_pdf("Ae32AeOR.pdf")
+C <- image_read_pdf("Ae32AoOR.pdf")
+D <- image_read_pdf("Ae21PenOR.pdf")
+E <- image_read_pdf("Ae21AeOR.pdf")
+G <- image_read_pdf("Ae21AoOR.pdf")
+
+
+fig1 <- image_append(c(A,D), stack = TRUE)
+fig2 <- image_append(c(B,E), stack = TRUE)
+fig3 <- image_append(c(C,G), stack = TRUE)
+fig <- image_append(c(fig1,fig2,fig3), stack = FALSE)
+
+
+image_write(fig, path = "figORdistribution.pdf", format = "pdf")
+
+A <- image_read_pdf("figOR.pdf")
+B <- image_read_pdf("legend.pdf")
+fig <- image_append(c(A,B), stack = FALSE)
+
+image_write(fig, path = "figORdistrib.pdf", format = "pdf")
