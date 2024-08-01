@@ -1,0 +1,57 @@
+library(DESeq2)
+
+setwd("/Users/melaniebey/Desktop/phd/phd_project/1_Nestmate_template_shape/habituation_Ae/Manuscript/Result2.0/datR/")
+
+meta <- read.csv("design_habituation_minusAe21Pen1.csv", sep=";",stringsAsFactors = T)
+rc <- read.csv("readcounttable_habituation_minusAe21Pen1_filtered.csv", sep=";")
+rownames(rc)<-rc$X
+rc=rc[,-1]
+rownames(meta)<-colnames(rc)
+
+rc=rc[149:583,]#reducing dataset to only ORs
+
+
+
+#removing outlier samples:
+excluded=c("")#Ae32Ae5","Ae32Ae1")
+rc=rc[,!rownames(meta) %in% excluded]
+meta=meta[!rownames(meta) %in% excluded,]
+
+rcm=as.matrix(rc)
+meta$habituation<-relevel(meta$habituation,ref="Pentan")
+
+##dseq all
+dsq<- DESeqDataSetFromMatrix(countData = rcm, colData= meta, design=~habituation )
+
+
+#pca colonies
+
+#vsd <- vst(dsq, blind=FALSE)#variance stabilized reads
+vsd<-varianceStabilizingTransformation(dsq)
+summary(assay(vsd))
+pca=prcomp(t(assay(vsd)))
+summary(pca)
+
+
+pccoor=pca$x[,1:2]#picking the number of principal coordinates for the rest of the analysis
+
+
+plot(pca$x[,1:2],col=meta$colony,pch=as.integer(factor(meta$habituation)),main="all samples")
+text(pca$x[,1:2],labels=rownames(meta),xpd=T)
+
+summary(manova(pccoor~meta$colony*meta$habituation))
+
+
+#per treatment:
+plot(pccoor[meta$habituation=="Pentan",1:2],col=meta$colony[meta$habituation=="Pentan"],pch=19,main="control")
+summary(manova(pccoor[meta$habituation=="Pentan",]~meta$colony[meta$habituation=="Pentan"]))
+
+plot(pccoor[meta$habituation=="Ae",1:2],col=meta$colony[meta$habituation=="Ae"],pch=19,main="Ae")
+summary(manova(pccoor[meta$habituation=="Ae",]~meta$colony[meta$habituation=="Ae"]))
+
+plot(pccoor[meta$habituation=="Ao",1:2],col=meta$colony[meta$habituation=="Ao"],pch=19,main="Ao")
+summary(manova(pccoor[meta$habituation=="Ao",]~meta$colony[meta$habituation=="Ao"]))
+
+
+#using dseq for the pca
+#plotPCA(vsd, intgroup=c("colony"))
