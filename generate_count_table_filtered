@@ -1,0 +1,77 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(tibble)
+library(fBasics)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+#library(pasilla) #no
+
+BiocManager::install("tibble")
+library(lima)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+??DESeq2
+
+Counts_ant <- read.table(".../readcounttable_habituation_minusAe21Pen1.csv",
+                         header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+
+### upload with header=TRUE and sep="\t"
+Design_ant <- read.table(".../design_habituation_minusAe21Pen1.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+
+row.names(Design_ant) <- colnames(Counts_ant[0,])
+library(dplyr)
+Design_ant <- Design_ant %>% mutate_if(is.character,as.factor)
+
+all(rownames(Design_ant) %in% colnames(Counts_ant)) #TRUE
+all(rownames(Design_ant) == colnames(Counts_ant)) #TRUE
+
+#filtering1
+#dds <- DESeqDataSetFromMatrix(countData = Counts_ant, colData = Design_ant, design = ~ colony+habituation) #40758
+#keep <- rowSums(counts(dds)) >= 10 # removes all rows with less than 10 
+#dds <- dds[keep,] #12532
+
+## filter 2, used
+
+filter_ant <- Counts_ant
+
+
+filter_ant[filter_ant < 10] <- NA
+
+Ae=as.data.frame(rowSums(is.na(filter_ant[,Design_ant$habituation=="Ae"])))
+colnames(Ae) <- "Ae"
+Ao=as.data.frame(rowSums(is.na(filter_ant[,Design_ant$habituation=="Ao"])))
+colnames(Ao) <- "Ao"
+Pen=as.data.frame(rowSums(is.na(filter_ant[,Design_ant$habituation=="Pentan"])))
+colnames(Pen) <- "Pen"
+
+filtermist <- cbind(Ae, Ao, Pen)
+rm(Ae, Ao, Pen)
+filtermist[filtermist > 8] <- NA
+filtermist$Row_NA<-rowSums(is.na(filtermist))
+filtermist$Row_NA[filtermist$Row_NA > 0] <- "remove"
+
+Counts_ant$filter <- filtermist$Row_NA
+Counts_ant_filtered <- Counts_ant[Counts_ant$filter!="remove",]
+ncol(Counts_ant_filtered)
+#Counts_ant_filtered <- Counts_ant_filtered[,-30]
+
+rm(filtermist,filter_ant)
+
+write.csv(Counts_ant_filtered, "readcounttable_habituation_minusAe21Pen1_filtered.csv")
+#7482 gene
