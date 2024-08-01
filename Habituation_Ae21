@@ -1,0 +1,121 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+#BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(grid)
+library(magick)
+library(here) 
+library(magrittr) 
+library(tibble)
+library(fBasics)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+library(RColorBrewer)
+library(ggsignif)
+library(chisq.posthoc.test)
+library(cli)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+#??DESeq2
+
+#volcano plot Ae21
+
+Ae <- read.table(".../Ae21_AePen_contrast_ant.csv", header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+
+
+Ae21Aeup <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(1, 0, 0, 0, 0, 4, 4),
+  labels=c("1"," " ," " ," " ," " , "4", "4"))
+
+Ae_up_pie <- ggplot(Ae21Aeup, aes(x="", y=value, fill=factor(group,c("Olfactory transduction","Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = labels, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+Ae_up_pie + ggsave(filename ="Ae21Ae_pie_up.pdf",width = 5, height = 5, dpi = 1200)
+
+
+Ae21Aedown <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(0, 0 ,2 , 3, 1, 0, 3 ),
+  labels=c(" "," " ,"2" ,"3" ,"1" , " ", "3"))
+
+Ae_down_pie <- ggplot(Ae21Aedown, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = labels, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+
+Ae_down_pie + ggsave(filename ="Ae21Ae_pie_down.pdf",width = 5, height = 5, dpi = 1200)
+
+Ae21Aoup <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(2, 1 ,0 ,0 ,2 ,4 ,3 ),
+  labels=c("2","1" ," " ," ", "2", "4","3"))
+
+Ao_up_pie <- ggplot(Ae21Aoup, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = labels, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+Ao_up_pie + ggsave(filename ="Ae21Ao_pie_up.pdf",width = 5, height = 5, dpi = 1200)
+
+
+
+
+volcanoplot <- image_read_pdf("volcanoplot_Ae21.pdf")
+pieblt <- image_read_pdf("blank_pie_tinny.pdf")
+legend <- image_read_pdf("legende_volcanoplot_2.pdf")
+piebls <- image_read_pdf("blank_pie_small.pdf")
+pieAeu <- image_read_pdf("Ae21Ae_pie_up.pdf")
+pieAou <- image_read_pdf("Ae21Ao_pie_up.pdf")
+pieAed <- image_read_pdf("Ae21Ae_pie_down.pdf")
+pieAod <- image_read_pdf("Ae21Ao_pie_down.pdf")
+
+#volcanoplot <- image_read_pdf("volc_2.pdf")
+#volcim <- image_resize(volcanoplot, geometry_size_pixels(height = 5000))
+#image_write(volcim, path = "volc_3.pdf", format = "pdf")
+#legendpie <- image_read_pdf("legendpie_2.pdf")
+#legend <- image_read_pdf("legende_volcanoplot.pdf")
+#leg <- image_resize(legend, geometry_size_pixels(height = 2000))
+#image_write(leg, path = "legende_volcanoplot_2.pdf", format = "pdf")
+
+volc <- image_append(c(volcanoplot,legend), stack = FALSE)
+pies <- image_append(c(pieAod, pieAed, pieAeu, pieAou), stack = FALSE)
+fig <- image_append(c(volc,pies), stack = TRUE)
+
+image_write(fig, path = "supp4.pdf", format = "pdf")
+
+
