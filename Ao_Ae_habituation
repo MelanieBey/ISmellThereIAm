@@ -1,0 +1,84 @@
+habituation <- read.table("..TabS11.csv",
+                          header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+habituation <- habituation %>% mutate_if(is.character,as.factor)
+habituation <- habituation %>% mutate_if(is.integer,as.factor)
+
+habituationOK <- habituation[habituation$remove=="ok",]
+summary.factor(habituationOK$groups)
+#BiocManager::install("ggthemes")
+library(dplyr)
+library(tidyverse)
+library(tidyquant)
+library(ggdist)
+library(ggthemes)
+library(tcltk)
+library(GrapheR)
+library(lattice)
+library(gplots)
+library(ggplot2)
+library(tibble)
+library(fBasics)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+library(ggpubr)
+
+
+
+Ao <- ggplot(data=habituationOK[habituationOK$groups=="Control_Ao" | habituationOK$groups=="Habituated_Ao" ,], aes(x = factor(groups, level = c('Control_Ao', 'Habituated_Ao')), y=MOR )) +
+  geom_point(aes(color=Focal_colony), position=position_jitter(0.3), size=12, alpha = 0.8) +
+  scale_color_grey(start=0.8, end=0)+
+  geom_boxplot(outlier.shape = NA, coef = 0, fill="lightgreen")+ 
+  scale_y_continuous(name="") +
+  stat_summary(fun=mean, geom="point", shape=21, size=15, stroke = 3) +
+  scale_x_discrete(name ="", labels=c("Control","Allospecific")) +
+  theme(axis.text=element_text(size=84, face="bold"),
+        axis.title=element_text(size=84,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none",
+        axis.line=element_line(size=1.5))+
+  geom_signif(comparisons=list(c('Control_Ao', 'Habituated_Ao')), annotations="*",
+              y_position = 25, tip_length = 0, textsize = 40) +
+  coord_cartesian( ylim = c(0, 30))#+
+ #ggsave(filename ="MORAo.pdf",width = 24, height = 16, dpi = 1200)
+
+Ae <- ggplot(data=habituationOK[habituationOK$groups=="Control_Ae" | habituationOK$groups=="Habituated_Ae" ,], aes(x = factor(groups, level = c('Control_Ae', 'Habituated_Ae')), y=MOR )) +
+  geom_point(aes(color=Focal_colony), position=position_jitter(0.3), size=12, alpha = 0.8) +
+  scale_color_grey(start=0.8, end=0)+
+  geom_boxplot(outlier.shape = NA, coef = 0, fill="blue4" )+ 
+  scale_y_continuous(name="Mandible opening (sec)") +
+  stat_summary(fun=mean, geom="point", shape=21, size=15, stroke = 3) +
+  scale_x_discrete(name ="", labels=c("Control","Conspecific")) +
+  theme(axis.text=element_text(size=84, face="bold"),
+        axis.title=element_text(size=84,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none",
+        axis.line=element_line(size=1.5))+
+  coord_cartesian( ylim = c(0, 30))#+
+#ggsave(filename ="MORAe.pdf",width = 24, height = 14, dpi = 1200)
+
+
+p <- ggarrange(Ae, Ao, ncol = 2, nrow = 1)
+p
+
+p + ggsave(filename ="behaviourfig.pdf",width = 30, height = 16, dpi = 1200)
+
+
+habituationOK$groups=relevel(habituationOK$groups,ref="Control_Ae")
+M=glm(MOR~Focal_colony*groups,data=habituationOK[habituationOK$groups=="Control_Ae" | habituationOK$groups=="Habituated_Ae" ,],family="quasipoisson") #model
+anova(M, test="F")
+
+
+habituationOK$groups=relevel(habituationOK$groups,ref="Control_Ao")
+summary.factor(habituationOK[habituationOK$groups=="Control_Ae" | habituationOK$groups=="Habituated_Ae" ,]$groups)
+M=glm(MOR~Focal_colony*groups,data=habituationOK[habituationOK$groups=="Control_Ao" | habituationOK$groups=="Habituated_Ao" ,],family="quasipoisson") #model
+anova(M, test="F")
