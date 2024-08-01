@@ -1,0 +1,331 @@
+library(RColorBrewer)
+library(dplyr)
+library(coin)
+library(ggplot2)
+library(chisq.posthoc.test)
+
+#install.packages("Polychrome")
+library(Polychrome)
+library(grid)
+library(magick)
+library(here) 
+library(magrittr) 
+library(ggpubr)
+library(tidyr)
+
+
+#install.packages(c("hrbrthemes", "GGally", "viridis"))
+library(hrbrthemes)
+library(GGally)
+library(viridis)
+
+# color palette
+#Pbase = createPalette(37,  c("#ff0000", "#00ff00", "#0000ff"))
+#swatch(Pbase)
+#P27 = c(Pbase[6:17], Pbase[22:24],Pbase[25:36])
+#swatch(P27)
+#write.csv(P27,'color.csv')
+
+
+#Genome
+
+OR_genome <- read.table(".../ORGenome.csv", header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+col_genome <- c("#00CBFD","#FFFF00","#692A81","#007835", "#F48B2E","#AA0058", "#2AFCE4","#755800","#CC66FC","#607F8B","#F98FDB","#A5F17D","#FCC97F", "#7D3B51","#F69194","#D03B16","#0DFBA9","#F91CAD","#8D9B22","#AAEDFE","#8F3200","#920073", "#6A00BE","#0D5385","#9A947E","#AE0DB0","#A77FA5")
+OR_genome$label_nb <- as.factor(OR_genome$label_nb)
+
+
+genome_ORfamily_pie <- ggplot(OR_genome, aes(x="", y=nb, fill=OR_family)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = label_nb, x = 1.3),
+            position = position_stack(vjust = 0.5),
+            color="black", size=30, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=col_genome)
+genome_ORfamily_pie + ggsave(filename ="genome_ORfamily_pie_2.pdf",width = 15, height = 15, dpi = 1200)
+
+
+OR_Ae <- read.table(".../ORAe.csv", header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+col_Ae <- c("#FFFF00", "#D03B16","#0DFBA9","#AAEDFE","#6A00BE","#0D5385","#9A947E","#A77FA5")
+OR_Ae$OR_family
+AeORfamily_pie <- ggplot(OR_Ae, aes(x="", y=nb, fill=OR_family)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = label_nb, x = 1.3),
+            position = position_stack(vjust = 0.5),
+            color="black", size=30, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=col_Ae)
+AeORfamily_pie + ggsave(filename ="AeORfamily_pie_2.pdf",width = 15, height = 15, dpi = 1200)
+
+ColDifAe21Ae32 <- read.table(".../ColDifAe21Ae32.csv", header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+col_ColDifAe21Ae32 <- c("#FFFF00", "#692A81","#F48B2E","#AA0058","#2AFCE4","#607F8B","#D03B16","#0DFBA9","#AAEDFE","#6A00BE","#0D5385","#9A947E","#A77FA5")
+ColDifAe21Ae32$label_nb <- as.factor(ColDifAe21Ae32$label_nb)
+
+ColDifAe21Ae32$OR_family
+ColDifAe21Ae32_pie <- ggplot(ColDifAe21Ae32, aes(x="", y=nb, fill=OR_family)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = label_nb, x = 1.3),
+            position = position_stack(vjust = 0.5),
+            color="black", size=30, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=col_ColDifAe21Ae32)
+ColDifAe21Ae32_pie + ggsave(filename ="ColDifAe21Ae32_pie_3.pdf",width = 15, height = 15, dpi = 1200)
+
+
+Col <- image_read_pdf("ColDifAe21Ae32_pie_3.pdf")
+Ae <- image_read_pdf("AeORfamily_pie_2.pdf")
+Gen <- image_read_pdf("genome_ORfamily_pie_2.pdf")
+#legend <- image_read_pdf("ORfamily_Legend.pdf")
+
+PieOR <- image_append(c(Gen, Col, Ae), stack = FALSE)
+
+image_write(PieOR, path = "ORFamilly_3.pdf", format = "pdf")
+
+
+# 9-exon, Ae32(*less)
+dat <- data.frame("Col" = c(23,31), "Genome" = c(147,288),
+                  row.names = c("exon", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+dat <- data.frame("Ae32" = c(3,20), "Genome" = c(147,288),
+                  row.names = c("exon", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#E (ns)
+dat <- data.frame("Col" = c(2,52), "Genome" = c(38,397),
+                  row.names = c("E", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(2,21), "Genome" = c(38,397),
+                  row.names = c("E", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+
+test <- fisher.test(dat)
+test
+
+#H (ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(16,419),
+                  row.names = c("H", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(1,22), "Genome" = c(16,419),
+                  row.names = c("H", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#L (ns)
+dat <- data.frame("Col" = c(7,47), "Genome" = c(69,366),
+                  row.names = c("H", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(3,20), "Genome" = c(69,366),
+                  row.names = c("H", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#M (ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(7,428),
+                  row.names = c("M", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(2,21), "Genome" = c(7,428),
+                  row.names = c("M", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#P (ns)
+dat <- data.frame("Col" = c(2,52), "Genome" = c(14,421),
+                  row.names = c("M", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(2,21), "Genome" = c(14,421),
+                  row.names = c("M", "Other_Family"),
+                  stringsAsFactors = FALSE)
+test <- fisher.test(dat)
+test
+
+#S(ns)
+dat <- data.frame("Col" = c(2,52), "Genome" = c(3,432),
+                  row.names = c("S", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(1,22), "Genome" = c(3,432),
+                  row.names = c("S", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#U Ae32(*)
+dat <- data.frame("Col" = c(5,49), "Genome" = c(35,400),
+                  row.names = c("U", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(5,18), "Genome" = c(35,400),
+                  row.names = c("U", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#V(ns)
+dat <- data.frame("Col" = c(7,47), "Genome" = c(56,379),
+                  row.names = c("V", "Other_Family"),
+                  stringsAsFactors = FALSE)
+dat <- data.frame("Ae32" = c(4,19), "Genome" = c(56,379),
+                  row.names = c("V", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#A(ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(11,424),
+                  row.names = c("A", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#C(ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(1,434),
+                  row.names = c("C", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#D(ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(4,431),
+                  row.names = c("D", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+#T(ns)
+dat <- data.frame("Col" = c(1,53), "Genome" = c(7,428),
+                  row.names = c("T", "Other_Family"),
+                  stringsAsFactors = FALSE)
+
+test <- fisher.test(dat)
+test
+
+
+
+
+ORcofig2 <- read.table("/ORorco_FIG2.csv", header=TRUE, sep=";", na.strings="NA", dec=",", strip.white=TRUE)
+ORcofig2 <- ORcofig2 %>% mutate_if(is.character,as.factor)
+
+ggplot(ORcofig2, aes(x=readOrco, y=readORsum)) +
+  geom_point(aes(color=treatment, shape=colony), size=12) +
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE,aes(color=treatment)) +
+  scale_shape_manual(values=c(1, 19))+
+  scale_color_manual(values = c("yellow2", "lightgreen", "blue4")) +
+  labs(x = "Orco expression", y = "Sum OR reads")+
+  theme(axis.text=element_text(size=54, face="bold"),
+        axis.title=element_text(size=54,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none",
+        legend.text = element_text(size = 40))+
+  labs(colour = "", shape = "") #+
+  #ggsave(filename ="cornew.pdf",width = 34, height = 12, dpi = 1200)
+
+
+library(grid)
+library(magick)
+
+graf <- image_read_pdf("cornew.pdf")
+legend <- image_read_pdf("legendeOrco.pdf")
+
+fig <- image_append(c(graf,legend), stack = FALSE)
+
+image_write(fig, path = "figcor.pdf", format = "pdf")
+
+
+pen <- ORcofig2[ORcofig2$treatment=="Control",]
+mean(pen$ratio_graf)
+cor.test(pen$readOrco, pen$readORsum, method="pearson")
+
+Ao <- ORcofig2[ORcofig2$treatment=="Allospecific",]
+mean(Ao$ratio_graf)
+
+cor.test(Ao$readOrco, Ao$readORsum, method="pearson")
+
+Ae <- ORcofig2[ORcofig2$treatment=="Conspecific",]
+cor.test(Ae$readOrco, Ae$readORsum, method="pearson")
+mean(Ae$ratio_graf)
+
+
+ggplot(ORcofig2, aes(x=factor(treatment, level = c("Control", "Conspecific", "Allospecific")), y=ratio_graf)) +
+  geom_point(aes(color=treatment, shape=colony), size=12) +
+  scale_shape_manual(values=c(1, 19))+
+  scale_color_manual(values = c("lightgreen", "blue4", "yellow2")) +
+  stat_summary(fun=mean, geom="point", shape=21, size=15, stroke = 3) +
+  scale_y_continuous(name="Ratio ORs sum - Orco") +
+  theme(axis.text=element_text(size=84, face="bold"),
+        axis.title=element_text(size=84,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none",
+        legend.text = element_text(size = 40))+
+  labs(colour = "", shape = "") +
+  geom_signif(comparisons=list(c('Control', 'Allospecific')), annotations="*",
+              y_position = 17.5, tip_length = 0, textsize = 50) +
+  scale_x_discrete(name ="")+
+  coord_cartesian( ylim = c(1, 20)) 
+
+  ggsave(filename ="ratio.pdf",width = 25, height = 20, dpi = 1200)
+  
+
+graf <- image_read_pdf("ratio.pdf")
+legend <- image_read_pdf("legendeOrco.pdf")
+  
+fig <- image_append(c(graf,legend), stack = FALSE)
+  
+image_write(fig, path = "figratio.pdf", format = "pdf")
+
+mean(ORcofig2[ORcofig2$treatment=="Control" & ORcofig2$colony=="Ae32" ,]$ratio)
+mean(ORcofig2[ORcofig2$treatment=="Inter-species" & ORcofig2$colony=="Ae32" ,]$ratio)
+mean(ORcofig2[ORcofig2$treatment=="Intra-species" & ORcofig2$colony=="Ae32" ,]$ratio)
+
+
+mean(ORcofig2[ORcofig2$treatment=="Control" & ORcofig2$colony=="Ae32" ,]$readOrco)
+mean(ORcofig2[ORcofig2$treatment=="Inter-species" & ORcofig2$colony=="Ae32" ,]$readOrco)
+mean(ORcofig2[ORcofig2$treatment=="Intra-species" & ORcofig2$colony=="Ae32" ,]$readOrco)
+
+mean(ORcofig2[ORcofig2$treatment=="Control" & ORcofig2$colony=="Ae32" ,]$readORsum)
+mean(ORcofig2[ORcofig2$treatment=="Inter-species" & ORcofig2$colony=="Ae32" ,]$readORsum)
+mean(ORcofig2[ORcofig2$treatment=="Intra-species" & ORcofig2$colony=="Ae32" ,]$readORsum)
+
+mean(ORcofig2[ORcofig2$treatment=="Control",]$readOrco)
+mean(ORcofig2[ORcofig2$treatment=="Inter-species",]$readOrco)
+mean(ORcofig2[ORcofig2$treatment=="Intra-species",]$readOrco)
+
+mean(ORcofig2[ORcofig2$treatment=="Control",]$readORsum)
+mean(ORcofig2[ORcofig2$treatment=="Inter-species",]$readORsum)
+mean(ORcofig2[ORcofig2$treatment=="Intra-species",]$readORsum)
+
+ORcofig2$colony=relevel(ORcofig2$colony,ref="Ae32")
+
+M <- lm(readORsum~readOrco*colony*treatment, data=ORcofig2) 
+M <- glm(readORsum~readOrco*colony*treatment, family="quasi", data=ORcofig2) 
+
+result <- anova(M, test="F")
+result2 <- summary(M)
+result3 <- result2[["coefficients"]]
+
+
