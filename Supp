@@ -1,0 +1,203 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+#BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(tibble)
+library(fBasics)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+#library(pasilla) #no
+
+#BiocManager::install("ggsignif")
+library(ggsignif)
+library(magick)
+library(chisq.posthoc.test)
+library(cli)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+#??DESeq2
+
+library(ggpubr)
+
+
+#### Suplementary
+
+Counts_ant_filtered <- read.table(".../readcounttable_habituation_minusAe21Pen1_filtered.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Counts_ant_filtered <- Counts_ant_filtered %>% mutate_if(is.character,as.factor)
+
+
+
+Design_ant <- read.table(".../design_habituation_minusAe21Pen1.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- Design_ant %>% mutate_if(is.character,as.factor)
+
+#Supp 1
+
+# DESeq
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered, colData = Design_ant, design = ~ colony+habituation)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+
+
+data <- plotPCA(rld, intgroup=c("habituation", "colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+
+p1<- ggplot(data, aes(PC1, PC2, color=habituation, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  scale_color_manual(labels = c("Intra-species", "Inter-species", "Control"), values = c("blue4","lightgreen","yellow2"))+ #your colors here
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.title=element_blank(),
+        legend.text = element_text(size = 20))+
+  stat_ellipse()
+
+
+p1
+
+p1 + ggsave(filename ="Supp1_PCA_habituation&colony.pdf",width = 18, height = 12, dpi = 1200)
+write.csv(data,'PCA_habituation&colony_coord.csv')
+
+
+
+#Supp 2
+#Pen 
+
+Counts_ant_filtered_pen=Counts_ant_filtered[Design_ant$habituation=="Pentan"]
+Counts_ant_filtered_pen <- Counts_ant_filtered_pen %>% mutate_if(is.character,as.integer)
+
+Design_pen=data.frame(Design_ant[Design_ant$habituation=="Pentan",1])
+colnames(Design_pen) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_pen, colData = Design_pen, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_A<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none")+
+  stat_ellipse()
+
+p2_A
+#p2_A + ggsave(filename ="PCA_colony_ellipse_pen.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_pen_coord.csv')
+
+
+#Ae
+
+Counts_ant_filtered_Ae=Counts_ant_filtered[Design_ant$habituation=="Ae"]
+Counts_ant_filtered_Ae <- Counts_ant_filtered_Ae %>% mutate_if(is.character,as.integer)
+
+Design_Ae=data.frame(Design_ant[Design_ant$habituation=="Ae",1])
+colnames(Design_Ae) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ae, colData = Design_Ae, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_B<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none") +
+  stat_ellipse()
+
+p2_B
+#p2_B + ggsave(filename ="PCA_colony_ellipse_Ae.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_Ae_coord.csv')
+
+#Ao
+
+Counts_ant_filtered_Ao=Counts_ant_filtered[Design_ant$habituation=="Ao"]
+Counts_ant_filtered_Ao <- Counts_ant_filtered_Ao %>% mutate_if(is.character,as.integer)
+
+Design_Ao=data.frame(Design_ant[Design_ant$habituation=="Ao",1])
+colnames(Design_Ao) <- "colony"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ao, colData = Design_Ao, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE)
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("colony"), returnData=TRUE)
+percentVar <- round(100 * attr(data, "percentVar"))
+p2_C<- ggplot(data, aes(PC1, PC2, shape=colony)) +
+  geom_point(size=12) +
+  scale_shape_manual(values=c(19, 1))+
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.title=element_blank(),
+        legend.text = element_text(size = 20))+
+  stat_ellipse()
+
+p2_C
+#p2_C + ggsave(filename ="PCA_colony_ellipse_Ao.pdf",width = 18, height = 12, dpi = 1200)
+#write.csv(data,'PCA_colony_ellipse_Ao_coord.csv')
+
+p <- ggarrange(p2_A, p2_B, p2_C, ncol = 3, nrow = 1,
+          labels = c("A", "B", "C"),
+          font.label = list(size = 26, color = "black"))
+p
+p + ggsave(filename ="suppcoldifallgene.pdf",width = 26, height = 12, dpi = 1200)
+
+
+#1.TagCloud
+library(topGO)
+library(ggplot2)
+
+cloud_PenGO <- read.table(".../cloud_PenGO.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+
+
+library("RColorBrewer")
+library("Rcpp")
+library("tagcloud")
+
+#choose your colour settings 
+#colors <- colorRampPalette( brewer.pal( 12, "Paired" ) )( length(cloud_PenGO$Term))
+colors = createPalette(length(cloud_PenGO$Term),  c("#ff0000", "#00ff00", "#0000ff"))
+
+#create the tag cloud 
+tagcloud(strmultline(cloud_PenGO$Term), weights = -log(as.numeric(cloud_PenGO$Fisher)),col=colors)
+
