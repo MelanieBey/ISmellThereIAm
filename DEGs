@@ -1,0 +1,403 @@
+#https://rstudio-pubs-static.s3.amazonaws.com/329027_593046fb6d7a427da6b2c538caf601e1.html#example-2-multiple-groups
+#https://genviz.org/module-04-expression/0004/02/01/DifferentialExpression/
+#https://www.biostars.org/p/395926/
+
+#BiocManager::install(c("BiocGenerics", "pasilla", "apeglm", "IHW", "vsn", "pasilla", "apeglm", "IHW","vsn", "SummarizedExperiment" , "MatrixGenerics","matrixStats" ), force = TRUE)
+library(tibble)
+library(fBasics)
+library(dplyr)
+library(coin)
+library(BiocGenerics)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(apeglm)
+library(IHW)
+library(vsn)
+library(SummarizedExperiment)
+library(MatrixGenerics)
+library(matrixStats)
+library(stringr)
+#library(pasilla) #no
+#BiocManager::install("tibble")
+library(lima)
+library(edgeR)
+library(DESeq2)
+library(ggplot2)
+#??DESeq2
+
+Counts_ant_filtered <- read.table(".../readcounttable_habituation_minusAe21Pen1_filtered.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Counts_ant_filtered <- read.table(".../readcounttable_habituation_minusAe21Pen1_minusOR_filtered.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- read.table(".../design_habituation_minusAe21Pen1.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- Design_ant %>% mutate_if(is.character,as.factor)
+
+row.names(Design_ant) <- colnames(Counts_ant_filtered[0,])
+
+### Ae32
+Counts_ant_filtered_Ae32=Counts_ant_filtered[Design_ant$colony=="Ae32"]
+Design_Ae32=data.frame(Design_ant[Design_ant$colony=="Ae32",2])
+colnames(Design_Ae32) <- "habituation"
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ae32, colData = Design_Ae32, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+
+?DESeq
+results <- results(dds, contrast = c("habituation", "Ao","Pentan"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+#write.csv(dataomit,'Ae32_AeAo_contrast_ant3.0.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae32_AoPen_contrast_ant_sig3.0.csv')
+
+
+### Ae21
+Counts_ant_filtered_Ae21=Counts_ant_filtered[Design_ant$colony=="Ae21"]
+Design_Ae21=data.frame(Design_ant[Design_ant$colony=="Ae21",2])
+colnames(Design_Ae21) <- "habituation"
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ae21, colData = Design_Ae21, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("habituation", "Ao","Pentan"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21_AeAo_contrast_ant3.0.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21_AoPen_contrast_ant_sig3.0.csv')
+
+
+#Pen 
+Counts_ant_filtered_pen=Counts_ant_filtered[Design_ant$habituation=="Pentan"]
+Design_pen=data.frame(Design_ant[Design_ant$habituation=="Pentan",1])
+colnames(Design_pen) <- "colony"
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_pen, colData = Design_pen, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("colony", "Ae21","Ae32"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Pen_contrast_ant.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Pen_contrast_ant_sig.csv')
+
+#Ae
+Counts_ant_filtered_Ao=Counts_ant_filtered[Design_ant$habituation=="Ae"]
+Design_Ao=data.frame(Design_ant[Design_ant$habituation=="Ae",1])
+colnames(Design_Ao) <- "colony"
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ao, colData = Design_Ao, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("colony", "Ae21","Ae32"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Ae_contrast_ant.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Ae_contrast_ant_sig.csv')
+
+
+#Ao
+Counts_ant_filtered_Ao=Counts_ant_filtered[Design_ant$habituation=="Ao"]
+Design_Ao=data.frame(Design_ant[Design_ant$habituation=="Ao",1])
+colnames(Design_Ao) <- "colony"
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant_filtered_Ao, colData = Design_Ao, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("colony", "Ae21","Ae32"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Ao_contrast_ant.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae21Ae32_Ao_contrast_ant_sig.csv')
+
+
+
+####PCA
+
+Counts_Ae32=Counts_ant_filtered[Design_ant$colony=="Ae32"]
+
+Design_Ae32=data.frame(Design_ant[Design_ant$colony=="Ae32",2])
+colnames(Design_Ae32) <- "habituation"
+
+?rlogTransformation
+dds <- DESeqDataSetFromMatrix(countData = Counts_Ae32, colData = Design_Ae32, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE,nsub=nrow(dds)-1 )
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("habituation"), returnData=TRUE) 
+percentVar <- round(100 * attr(data, "percentVar"))
+p32 <- ggplot(data, aes(PC1, PC2, color=habituation), label = TRUE) +
+  geom_point(size=12) +
+  scale_color_manual(values = c( "blue4","lightgreen", "yellow2"))+ #your colors here
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.position = "none")+
+  stat_ellipse()
+p32
+
+ggplot(data, aes(x=PC1, y=PC2)) + geom_point() + geom_text(aes(label=name))
+  
+
+p32 + ggsave(filename ="PCA_habituationAe32_elypse.pdf",width = 18, height = 12, dpi = 1200)
+write.csv(data,'PCA_habituationAe32_coord.csv')
+?DESeq
+
+
+### Ae21
+
+Counts_Ae21=Counts_ant_filtered[Design_ant$colony=="Ae21"]
+
+Design_Ae21=data.frame(Design_ant[Design_ant$colony=="Ae21",2])
+colnames(Design_Ae21) <- "habituation"
+
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_Ae21, colData = Design_Ae21, design = ~ habituation)
+dds <- DESeq(dds) # analyses the data
+dds_vst <- vst(dds, blind=FALSE,nsub=nrow(dds)-1 )
+rld <- rlogTransformation(dds)
+
+data <- plotPCA(rld, intgroup=c("habituation"), returnData=TRUE) 
+percentVar <- round(100 * attr(data, "percentVar"))
+p21 <- ggplot(data, aes(PC1, PC2, color=habituation)) +
+  geom_point(size=12) +
+  scale_color_manual(labels = c("Intra-species", "Inter-species", "Control"), values = c("blue4","lightgreen", "yellow2"))+ #your colors here
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance"))+
+  theme(axis.text=element_text(size=26, face="bold"),
+        axis.title=element_text(size=26,face="bold"),
+        panel.background=element_rect(fill = "white", colour = "black"),
+        legend.title=element_blank(),
+        legend.text = element_text(size = 20))+
+  stat_ellipse()
+p21
+p21 + ggsave(filename ="PCA_habituationAe21_elypse.pdf",width = 18, height = 12, dpi = 1200)
+write.csv(data,'PCA_habituationAe21_coord.csv')
+
+p <- ggarrange(p32, p21, ncol = 2, nrow = 1,
+               labels = c("A", "B"),
+               font.label = list(size = 26, color = "black"))
+p
+p + ggsave(filename ="Fig2.pdf",width = 26, height = 12, dpi = 1200)
+
+
+
+#1.TagCloud
+library(topGO)
+library(ggplot2)
+
+all_term <- read.table(".../cloud_treatmentGO.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+
+
+library("RColorBrewer")
+library("Rcpp")
+library("tagcloud")
+
+cloud <- all_term
+cloud <- all_term[all_term$expression=="Up",]
+
+# color palette 1
+
+Pbase = createPalette(length(cloud$Term),  c("#ff0000", "#00ff00", "#0000ff"))
+swatch(Pbase)
+
+#create the tag cloud 
+tagcloud(strmultline(cloud$Term), weights = -log(as.numeric(cloud$Fisher)),col=Pbase)
+
+
+### Down 
+cloudD <- all_term[all_term$expression=="Down",]
+
+tagcloud(strmultline(cloudD$Term), weights = -log(as.numeric(cloudD$Fisher)))
+
+
+
+Up <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(7 , 5 , 7, 8 ,19 , 9, 21))
+
+
+Up_pie <- ggplot(Up, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = value, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+#Up_pie + ggsave(filename ="Up_pie.pdf",width = 5, height = 5, dpi = 1200)
+
+Down <- data.frame(
+  group=c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function"),
+  value=c(4 ,2,5, 3, 17, 10 , 9 ))
+
+
+Down_pie <- ggplot(Down, aes(x="", y=value, fill=factor(group,c("Olfactory transduction", "Neuro related", "Protein biosynthesis", "Gene regulation", "Biological process", "Cellular component", "Molecular function")))) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0) +
+  geom_text(aes(label = value, x = c(1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3)),
+            position = position_stack(vjust = 0.5),
+            color=c("white", "white", "black","black", "grey82", "grey42", "grey22"), size=15, fontface = "bold")+
+  theme(axis.text=element_blank(),
+        axis.title=element_blank(),
+        panel.background=element_rect(fill = "transparent", colour = NA),
+        legend.position = "none") +
+  scale_fill_manual(values=c("darkorchid4", "firebrick", "orange" ,"yellow","grey22", "grey82","grey42"))
+#Down_pie + ggsave(filename ="Down_pie.pdf",width = 5, height = 5, dpi = 1200)
+
+
+
+
+
+#### supl
+Counts_ant <- read.table(".../readcounttable_morph_Ant_Medium_old-worker_OR.csv",
+                                  header=TRUE,row.names = 1, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- read.table(".../design_morph_Ant_Medium_old-worker_OR.csv",
+                         header=TRUE, sep=";", na.strings="NA", dec=".", strip.white=TRUE)
+Design_ant <- Design_ant %>% mutate_if(is.character,as.factor)
+
+filter_ant <- Counts_ant
+
+
+filter_ant[filter_ant < 10] <- NA
+
+filter_ant$Row_NA<-rowSums(is.na(filter_ant))
+filter_ant$Row_NA[filter_ant$Row_NA > 4] <- "remove"
+
+Counts_ant$filter <- filter_ant$Row_NA
+Counts_ant_filtered <- Counts_ant[Counts_ant$filter!="remove",]
+Counts_ant_filtered <- Counts_ant_filtered[,-7]
+
+rm(Counts_ant,filter_ant)
+
+## colony
+
+dds <- DESeqDataSetFromMatrix(countData = Counts_ant, colData = Design_ant, design = ~ colony)
+dds <- DESeq(dds) # analyses the data
+
+results <- results(dds, contrast = c("colony", "Ae5","Ae21"))
+results_sig <- subset(results, padj < 0.05)
+
+data <- data.frame(cbind(results@rownames, 
+                         results$baseMean,
+                         results@listData[["log2FoldChange"]],
+                         results$lfcSE,
+                         results$stat,
+                         results$pvalue,
+                         results$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae5_Ae21_contrast_supl.csv')
+
+data <- data.frame(cbind(results_sig@rownames, 
+                         results_sig$baseMean,
+                         results_sig@listData[["log2FoldChange"]],
+                         results_sig$lfcSE,
+                         results_sig$stat,
+                         results_sig$pvalue,
+                         results_sig$padj))
+colnames(data) <- c("gene_ID","baseMean","log2FoldChange","lfcSE","stat","pvalue","padj")
+dataomit <- na.omit(data)
+write.csv(dataomit,'Ae5_Ae21_contrast_supl_sig.csv')
